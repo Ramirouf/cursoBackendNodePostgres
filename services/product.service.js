@@ -1,11 +1,14 @@
 const faker = require('faker');
-const boom = require('@hapi/boom');
+//const boom = require('@hapi/boom');
 
+const pool = require("../libs/postgres.pool");
 class ProductsService {
 
-  constructor(){
+  constructor() {
     this.products = [];
     this.generate();
+    this.pool = pool;
+    this.pool.on("error", (err) => console.error(err));
   }
 
   generate() {
@@ -22,48 +25,56 @@ class ProductsService {
   }
 
   async create(data) {
-    const newProduct = {
-      id: faker.datatype.uuid(),
-      ...data
+    let { name, items } = data;
+    const queryID = "Select (MAX(ID) + 1) AS ID FROM PRODUCTS";
+    const { rows } = await this.pool.query(queryID);
+
+    if (!items) {
+      items = 0
     }
-    this.products.push(newProduct);
-    return newProduct;
+    const values = [rows[0].id, name, items];
+    const query = "INSERT INTO PRODUCTS (ID, NAME, ITEMS) VALUES ($1, $2, $3)";
+    await this.pool.query(query, values);
+
+    return {
+      id: rows[0].id,
+      ...data
+    };
   }
 
-  find() {
-    return this.products;
+  async find() {
+    const query = "SELECT * FROM PRODUCTS";
+    const response = await this.pool.query(query);
+    return response.rows;
   }
 
   async findOne(id) {
-    const product = this.products.find(item => item.id === id);
-    if (!product) {
-      throw boom.notFound('product not found');
-    }
-    if (product.isBlock) {
-      throw boom.conflict('product is block');
-    }
-    return product;
+    const query = `SELECT * FROM PRODUCTS where id = $1`
+    const product = await this.pool.query(query, [id]);
+    return product.rows;
   }
 
   async update(id, changes) {
-    const index = this.products.findIndex(item => item.id === id);
-    if (index === -1) {
-      throw boom.notFound('product not found');
-    }
-    const product = this.products[index];
-    this.products[index] = {
-      ...product,
+    const dataUpdate = [];
+    const setQuery = [];
+
+    Object.entries(changes).forEach((entry, index) => {
+      setQuery.push(entry[0] + ` = $${index + 1}`);
+      dataUpdate.push(entry[1]);
+    });
+
+    const query = `UPDATE PRODUCTS SET ${setQuery.join(", ")} WHERE ID = ${id}`;
+    await this.pool.query(query, dataUpdate);
+
+    return {
+      id,
       ...changes
     };
-    return this.products[index];
   }
 
   async delete(id) {
-    const index = this.products.findIndex(item => item.id === id);
-    if (index === -1) {
-      throw boom.notFound('product not found');
-    }
-    this.products.splice(index, 1);
+    const query = "DELETE FROM CATEGORIES WHERE ID = $1";
+    await this.pool.query(query, [id]);
     return { id };
   }
 
