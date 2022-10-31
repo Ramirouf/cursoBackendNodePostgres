@@ -1,30 +1,13 @@
-//const boom = require('@hapi/boom');
-const pool = require("../libs/postgres.pool")
-//const getConnection = require("../libs/postgres");
+const boom = require('@hapi/boom');
 const { models } = require('../libs/sequelize');
 class UserService {
   constructor() {
     this.users = [];
-    this.pool = pool;
-    this.pool.on("error", (err) => console.log(err));
   }
 
   async create(data) {
-    let { name, items } = data;
-    const queryID = "Select (MAX(ID) + 1) AS ID FROM USERS";
-    const { rows } = await this.pool.query(queryID);
-
-    if (!items) {
-      items = 0
-    }
-    const values = [rows[0].id, name, items];
-    const query = "INSERT INTO USERS (ID, NAME, ITEMS) VALUES ($1, $2, $3)";
-    await this.pool.query(query, values);
-
-    return {
-      id: rows[0].id,
-      ...data
-    };
+    const newUser = await models.User.create(data);
+    return newUser;
   }
 
   async find() {
@@ -33,34 +16,24 @@ class UserService {
   }
 
   async findOne(id) {
-    const query = `SELECT * FROM USERS WHERE ID = $1`;
-    const user = await this.pool.query(query, [id]);
-    return user.rows;
+    const user = await models.User.findByPk(id);
+    if (!user) {
+      throw boom.notFound('User not found');
+    }
+    return user;
 
   }
 
   async update(id, changes) {
-    const dataUpdate = [];
-    const setQuery = [];
-
-    Object.entries(changes).forEach((entry, index) => {
-      setQuery.push(entry[0] + ` = $${index + 1}`);
-      dataUpdate.push(entry[1]);
-    });
-
-    const query = `UPDATE USERS SET ${setQuery.join(", ")} WHERE ID = ${id}`;
-    await this.pool.query(query, dataUpdate);
-
-    return {
-      id,
-      ...changes
-    };
+    const user = await this.findOne(id);
+    const response = await user.update(changes);
+    return response;
   }
 
   async delete(id) {
-    const query = "DELETE FROM CATEGORIES WHERE ID = $1";
-    await this.pool.addListener.query(query, [id]);
-    return { id };
+    const user = await this.findOne(id);
+    await user.destroy();
+    return { id }
   }
 }
 
