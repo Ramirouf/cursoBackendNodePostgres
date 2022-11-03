@@ -2,6 +2,6 @@ module.exports = {
   'config': './db/config.js',
   'models-path': './db/models/',
   'migrations-path': './db/migrations/',
-  'seed-path': './db/seeders/',
+  'seeders-path': './db/seeders/',
 
 }
