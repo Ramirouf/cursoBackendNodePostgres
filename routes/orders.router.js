@@ -6,6 +6,7 @@ const validatorHandler = require('../middlewares/validator.handler');
 const {
   createOrderSchema,
   getOrderSchema,
+  addItemSchema
 } = require('../schemas/order.schema');
 
 const router = express.Router();
@@ -31,6 +32,19 @@ router.post('/',
       const body = req.body;
       const newOrder = await service.create(body);
       res.status(201).json(newOrder);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+router.post(
+  '/add-item',
+  validatorHandler(addItemSchema, 'body'), //Pass schema to verify if data is correct ?.. info is in body
+  async (req, res, next) => {
+    try {
+      const body = req.body;
+      const newItem = await service.addItem(body);
+      res.status(201).json(newItem);
     } catch (error) {
       next(error);
     }

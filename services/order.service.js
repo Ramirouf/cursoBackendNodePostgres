@@ -1,4 +1,4 @@
-const boom = require('@hapi/boom');
+//const boom = require('@hapi/boom');
 
 const { models } = require('./../libs/sequelize')
 class OrderService {
@@ -10,6 +10,11 @@ class OrderService {
     return newOrder;
   }
 
+  async addItem(data) { //Receive data, which is already validated
+    const newItem = await models.OrderProduct.create(data)
+    return newItem;
+  }
+
   async find() {
     return [];
   }
@@ -19,7 +24,9 @@ class OrderService {
       include: [{
         association: 'customer',
         include: ['user']
-      }]
+      },
+        'items' //Models has a belongsToMany, with an assoc. called 'items'
+      ]
     });
     return order;
   }

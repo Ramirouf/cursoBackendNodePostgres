@@ -27,6 +27,16 @@ const OrderSchema = {
     field: 'created_at',
     defaultValue: Sequelize.NOW
   },
+  total: { //Calculated with Node. Not recommended if there are lots of elements.
+    type: DataTypes.VIRTUAL, //Virtual for it to not exist in DB
+    get() { //How to get or calculate this field
+      if (this.items.length > 0) { //'this.items' references to 'items' in belongsToMany relationship
+        return this.items.reduce((total, item) => {
+          return total + (item.price * item.OrderProduct.amount);
+        }, 0);
+      }
+    }
+  }
 }
 
 class Order extends Model {
