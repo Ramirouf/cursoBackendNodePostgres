@@ -7,6 +7,9 @@ const description = Joi.string().min(10);
 const image = Joi.string().uri();
 const categoryId = Joi.number().integer();
 
+const price_min = Joi.number().integer();
+const price_max = Joi.number().integer();
+
 const limit = Joi.number().integer();
 const offset = Joi.number().integer();
 
@@ -31,8 +34,15 @@ const getProductSchema = Joi.object({
 });
 
 const queryProductSchema = Joi.object({
-  limit, //Optional
-  offset //Optional
+  limit,
+  offset,
+  price, //For filtering by price when asking for products
+  price_min, // If it's desired to filter by range ...
+  price_max: price_max.when('price_min', {  //Max is required only if i have a price_min
+    is: Joi.number().integer(), // "If there is a price_min ...."
+    then: Joi.required()        // "... price_max is required"
+  })
   //"Most query params are optional"
+  //All the above are optional
 });
 module.exports = { createProductSchema, updateProductSchema, getProductSchema, queryProductSchema }
