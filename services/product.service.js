@@ -13,11 +13,18 @@ class ProductsService {
     return newProduct;
   }
 
-  async find() {
-    const data = await models.Product.findAll({
-      include: ['category']
-    });
-    return data;
+  //Now, with paging, find must be "dynamic". Which means that it behaves differently if there's a limit and offset, or not
+  async find(query) {
+    const options = {
+      include: ['category'], // With paging or not, category is needed
+    }
+    const { limit, offset } = query;
+    if (limit && offset) {
+      options.limit = limit;
+      options.offset = offset
+    }
+    const products = await models.Product.findAll(options);
+    return products;
   }
 
   async findOne(id) {
